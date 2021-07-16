@@ -1,0 +1,7 @@
+namespace: dev
+resources:
+- configmap.yaml
+- secret-db-creds.yaml
+- secret-liberty-creds.yaml
+bases:
+- ./../base

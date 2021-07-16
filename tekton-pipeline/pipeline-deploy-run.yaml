@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: tutorial-pipeline-run-1
+spec:
+  params:
+    - name: BUILDER_IMAGE
+      value: 'quay.io/buildah/stable:v1.11.0'
+    - name: DOCKERFILE
+      value: ./Dockerfile
+    - name: TLSVERIFY
+      value: 'false'
+    - name: pathToContext
+      value: /workspace/runtime-modernization-git
+    - name: targetNamespace
+      value: dev
+  pipelineRef:
+    name: tutorial-pipeline
+  resources:
+    - name: runtime-modernization-git
+      resourceRef:
+        name: runtime-modernization-git
+    - name: runtime-modernization-image
+      resourceRef:
+        name: runtime-modernization-image
+  serviceAccountName: pipeline

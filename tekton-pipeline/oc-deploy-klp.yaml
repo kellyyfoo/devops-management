@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: deploy-cm
+spec:
+  inputs:
+    resources:
+      - name: runtime-modernization-git
+        type: git
+  params:
+      - name: pathToContext
+        type: string
+        default: /workspace/runtime-modernization-git
+      - name: targetNamespace
+        type: string
+        default: dev
+  steps:
+    - name: deploy-open-liberty
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      script: |
+        #!/bin/bash
+        oc kustomize /workspace/runtime-modernization-git/deploy/overlay-apps
+        oc apply -k /workspace/runtime-modernization-git/deploy/overlay-apps -n dev
+        echo "Done deploying open liberty application"
+        ROUTE=$(oc get route cos --template='{{ .spec.host }}')
+        echo "http://${ROUTE}/CustomerOrderServicesWeb"
+ 

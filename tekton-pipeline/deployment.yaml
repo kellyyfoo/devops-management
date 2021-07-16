@@ -1,0 +1,45 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: open-liberty-tekton
+  labels:
+    app: open-liberty-tekton
+spec:
+  selector:
+    app: open-liberty-tekton
+  ports:
+    - port: 9088
+      name: http
+  type: NodePort
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: open-liberty-tekton
+  labels:
+    app: open-liberty-tekton
+spec:
+  selector:
+    matchLabels:
+      app: open-liberty-tekton
+  replicas: 1
+  template:
+    metadata: 
+      labels:
+        app: open-liberty-tekton
+        version: v1
+    spec:
+      containers:
+      - name: open-liberty-tekton
+        image: image-registry.openshift-image-registry.svc:5000/tekton-lab/build-open-liberty:latest
+        ports:
+        - containerPort: 9088
+        livenessProbe:
+          exec:
+            command: ["sh", "-c", "curl -s http://localhost:9088/health/live"]
+          initialDelaySeconds: 20
+        readinessProbe:
+          exec:
+            command: ["sh", "-c", "curl -s http://localhost:9088/health/ready"]
+          initialDelaySeconds: 40
+      restartPolicy: Always

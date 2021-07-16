@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: deploy-open-liberty
+  labels:
+    app.kubernetes.io/version: "0.3"
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.21.0"
+    tekton.dev/displayName: "prep-open-liberty"
+spec:
+  description: >-
+    deploy-open-liberty
+  workspaces:
+    - name: source
+      description: shared workspace 
+  params:
+  - name: project-name
+    description: project-name 
+  steps:
+    - name: deploy-open-liberty
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli
+      script: |
+        #!/bin/bash
+        oc project $(params.project-name) > /dev/null 2>&1
+        if [ $? != 0 ]; then 
+          oc new-project $(params.project-name)
+        fi
+        cd $(workspaces.source.path)/labs/Openshift/DevopsManagement/
+        oc apply -f tekton-pipeline/deployment.yaml
+        oc expose svc/open-liberty-tekton
+        echo "Done deploying open liberty application"
+        ROUTE=$(oc get route open-liberty-tekton --template='{{ .spec.host }}')
+        echo "http://${ROUTE}/CustomerOrderServicesWeb"

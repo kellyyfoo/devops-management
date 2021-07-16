@@ -1,0 +1,58 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: tutorial-pipeline
+spec:
+  resources:
+    - name: runtime-modernization-git
+      type: git
+    - name: runtime-modernization-image
+      type: image
+  params:
+    - name: BUILDER_IMAGE
+      description: Image used to do the build
+      default: quay.io/buildah/stable:v1.11.0
+    - name: DOCKERFILE
+      description: Location of the docker file
+      default: ./Dockerfile
+    - name: TLSVERIFY
+      description: True or False for TLS Verificatoin
+      default: "false"
+    - name: pathToContext
+      description: path to context
+      default: /workspace/runtime-modernization-git
+    - name: targetNamespace
+      description: namespace
+      default: dev
+  tasks:
+    - name: build-push
+      taskRef:
+        name: buildah
+      params:
+        - name: BUILDER_IMAGE
+          value: "quay.io/buildah/stable:v1.11.0"
+        - name: DOCKERFILE
+          value: "/Dockerfile"
+        - name: TLSVERIFY
+          value: "false"
+      resources:
+        inputs:
+          - name: runtime-modernization-git
+            resource: runtime-modernization-git
+        outputs:
+          - name:  runtime-modernization-image
+            resource: runtime-modernization-image  
+    - name: deploy-to-cluster
+      taskRef:
+        name: deploy-cm
+      params:
+        - name: pathToContext
+          value: "/workspace/runtime-modernization-git"
+        - name: targetNamespace
+          value: "dev"
+      resources:
+        inputs:
+          - name: runtime-modernization-git
+            resource: runtime-modernization-git
+      runAfter:
+        - build-push
