@@ -8,11 +8,10 @@ oc delete configmap cos-config
 oc delete secret db-creds
 oc delete secret liberty-creds
 
+oc delete -f img-resource.yaml
+oc delete -f git-resource.yaml
+
 #oc delete -f run-task-deploy.yaml 
-
-#oc delete -f img-resource.yaml
-#oc delete -f git-resource.yaml
-
 
 
 
