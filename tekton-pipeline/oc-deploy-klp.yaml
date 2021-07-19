@@ -21,7 +21,10 @@ spec:
         #!/bin/bash
         oc kustomize /workspace/runtime-modernization-git/deploy/overlay-apps
         oc apply -k /workspace/runtime-modernization-git/deploy/overlay-apps -n dev
+        sleep 10
+        oc apply -k /workspace/runtime-modernization-git/deploy/overlay-apps -n dev
         echo "Done deploying open liberty application"
+        sleep 15
         ROUTE=$(oc get route cos --template='{{ .spec.host }}')
         echo "http://${ROUTE}/CustomerOrderServicesWeb"
  
