@@ -19,6 +19,7 @@ spec:
         oc apply -k deploy/overlays/$(params.target-namespace) 
         sleep 10
         oc delete pod `oc get pods | grep cos | awk '{print $1}'`
+        sleep 10
         echo "Done deploying open liberty application"
         sleep 15
         ROUTE=$(oc get route cos --template='{{ .spec.host }}')
