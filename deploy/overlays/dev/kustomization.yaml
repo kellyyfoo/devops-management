@@ -4,4 +4,4 @@ resources:
 - secret-db-creds.yaml
 - secret-liberty-creds.yaml
 bases:
-- ./../base
+- ./../../base
