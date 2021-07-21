@@ -3,12 +3,10 @@ kind: Pipeline
 metadata:
   name: tutorial-pipeline
 spec:
-  resources:
-    - name: runtime-modernization-git
-      type: git
-    - name: runtime-modernization-image
-      type: image
   params:
+    - name: repo-url
+      type: string
+      description: The git repository URL to clone from
     - name: BUILDER_IMAGE
       description: Image used to do the build
       default: quay.io/buildah/stable:v1.11.0
@@ -18,41 +16,50 @@ spec:
     - name: TLSVERIFY
       description: True or False for TLS Verificatoin
       default: "false"
-    - name: pathToContext
-      description: path to context
-      default: /workspace/runtime-modernization-git
-    - name: targetNamespace
-      description: namespace
-      default: dev
+    - name: target-namespace
+      type: string
+      description: The target project
+  workspaces:
+    - name: shared-data
+      description: |
+        shared workspace
   tasks:
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      workspaces:
+      - name: output
+        workspace: shared-data
+      params:
+      - name: url
+        value: $(params.repo-url)
+      - name: revision
+        value: master
     - name: build-push
       taskRef:
         name: buildah
+      workspaces:
+        - name: source
+          workspace: shared-data
       params:
+        - name: IMAGE
+          value: "image-registry.openshift-image-registry.svc:5000/$(params.target-namespace)/cos:latest"
         - name: BUILDER_IMAGE
           value: "quay.io/buildah/stable:v1.11.0"
         - name: DOCKERFILE
           value: "/Dockerfile"
         - name: TLSVERIFY
           value: "false"
-      resources:
-        inputs:
-          - name: runtime-modernization-git
-            resource: runtime-modernization-git
-        outputs:
-          - name:  runtime-modernization-image
-            resource: runtime-modernization-image  
+      runAfter:
+        - git-clone
     - name: deploy-to-cluster
       taskRef:
         name: deploy-cm
+      workspaces:
+        - name: source
+          workspace: shared-data
       params:
-        - name: pathToContext
-          value: "/workspace/runtime-modernization-git"
-        - name: targetNamespace
-          value: "dev"
-      resources:
-        inputs:
-          - name: runtime-modernization-git
-            resource: runtime-modernization-git
+        - name: target-namespace
+          value: $(params.target-namespace)
       runAfter:
         - build-push

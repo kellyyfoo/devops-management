@@ -1,32 +1,30 @@
 ---
-apiVersion: tekton.dev/v1alpha1
+apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
   name: buildah
 spec:
-  inputs:
-    params:
-    - name: BUILDER_IMAGE
-      description: The location of the buildah builder image.
-      default: quay.io/buildah/stable:v1.11.0
-    - name: DOCKERFILE
-      description: Path to the Dockerfile to build.
-      default: ./Dockerfile
-    - name: TLSVERIFY
-      description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
-      default: "false"
-    resources:
-    - name: runtime-modernization-git
-      type: git
-  outputs:
-    resources:
-    - name: runtime-modernization-image
-      type: image
+  params:
+  - name: IMAGE
+    description: Reference of the image buildah will produce.
+  - name: BUILDER_IMAGE
+    description: The location of the buildah builder image.
+    default: quay.io/buildah/stable:v1.11.0
+  - name: DOCKERFILE
+    description: Path to the Dockerfile to build.
+    default: ./Dockerfile
+  - name: TLSVERIFY
+    description: Verify the TLS on the registry endpoint (for push/pull to a non-TLS registry)
+    default: "false"
+
+  workspaces:
+  - name: source
+
   steps:
   - name: build
     image: quay.io/buildah/stable:v1.11.0
-    workingDir: /workspace/runtime-modernization-git
-    command: ['buildah', 'bud', '--tls-verify=false', '--format=docker', '-f', './Dockerfile', '-t', 'image-registry.openshift-image-registry.svc:5000/dev/cos:latest', '.']
+    workingDir: $(workspaces.source.path)
+    command: ['buildah', 'bud', '--tls-verify=false', '--format=docker', '-f', './Dockerfile', '-t', $(params.IMAGE), '.']
     volumeMounts:
     - name: varlibcontainers
       mountPath: /var/lib/containers
@@ -34,8 +32,8 @@ spec:
       privileged: true
   - name: push
     image: quay.io/buildah/stable:v1.11.0
-    workingDir: /workspace/tekton1-git
-    command: ['buildah', 'push', '--tls-verify=false', 'image-registry.openshift-image-registry.svc:5000/dev/cos:latest', 'image-registry.openshift-image-registry.svc:5000/dev/cos:latest']
+    workingDir: $(workspaces.source.path)
+    command: ['buildah', 'push', '--tls-verify=false', $(params.IMAGE), $(params.IMAGE)]
     volumeMounts:
     - name: varlibcontainers
       mountPath: /var/lib/containers
